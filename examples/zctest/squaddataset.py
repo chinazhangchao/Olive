@@ -31,7 +31,7 @@ class SquadV2DataReader(Dataset):
             params = {
                 'return_tensors': 'np'
             }
-            
+
         encoded_input = self.tokenizer(
             question,
             context,
@@ -44,17 +44,22 @@ class SquadV2DataReader(Dataset):
         return self.datasize
 
     def __getitem__(self, idx) -> tuple[dict[str, np.array], str]:
-      input_ids, attention_mask, token_type_ids, _tokens = self.preprocess(
-            self.dataset[idx]["question"],
-            self.dataset[idx]["context"],
-            fixed_length=self.fixed_length,
-        )
-      model_inputs = {
-          'input_ids':   np.array(input_ids, dtype=np.int64),
-          'attention_mask':  np.array(attention_mask, dtype=np.int64),
-      }
+        input_ids, attention_mask, token_type_ids, _tokens = self.preprocess(
+                self.dataset[idx]["question"],
+                self.dataset[idx]["context"],
+                fixed_length=self.fixed_length,
+            )
+        model_inputs = {
+            'input_ids':   np.array(input_ids, dtype=np.int64),
+            'attention_mask':  np.array(attention_mask, dtype=np.int64),
+            'token_type_ids': np.array(token_type_ids, dtype=np.int64),
+        }
 
-      return model_inputs, self.dataset[idx]["answers"]["text"]
+        model_inputs = {
+            k: np.squeeze(v, axis=0) for k, v in model_inputs.items()
+        }
+
+        return model_inputs, self.dataset[idx]["answers"]["text"]
 
 @Registry.register_dataloader()
 def squad_calibration_reader(dataset, batch_size,
