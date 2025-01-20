@@ -50,6 +50,13 @@
             "save_as_external_data": true,
             "all_tensors_to_one_file": true,
             "calibrate_method": "MinMax",
+            "op_types_to_quantize": [
+                "MatMul",
+                "LayerNormalization",
+                "Gemm",
+                "Sigmoid",
+                "Gelu"
+            ],
             "data_config": "quant_data_config"
         },
         "session_params_tuning": { "type": "OrtSessionParamsTuning", "data_config": "quant_data_config" }
