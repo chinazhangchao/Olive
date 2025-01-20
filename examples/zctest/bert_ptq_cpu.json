@@ -2,8 +2,19 @@
     "input_model": {
         "type": "HfModel",
         "model_path": "google-bert/bert-large-uncased-whole-word-masking-finetuned-squad",
-        "task": "text-classification",
-        "load_kwargs": { "attn_implementation": "eager" }
+        "task": "question-answering",
+        "load_kwargs": { "attn_implementation": "eager" },
+        "io_config": {
+            "input_names": ["input_ids", "attention_mask", "token_type_ids"],
+            "input_shapes": [
+                [1, 512],
+                [1, 512],
+                [1, 512]
+            ],
+            "input_types": ["int64", "int64", "int64"],
+            "output_names": [ "start_logits","end_logits" ],
+            "output_shapes": [[1, 512], [1, 512]]
+        }
     },
     "systems": {
         "local_system": {
@@ -27,7 +38,7 @@
     "passes": {
         "conversion": { "type": "OnnxConversion", "target_opset": 17 },
         "qnn_preprocess": {
-            "type": "QNNPreprocess", 
+            "type": "QNNPreprocess",
             "save_as_external_data": true,
             "all_tensors_to_one_file": true
         },
