@@ -11,10 +11,10 @@ from olive.data.registry import Registry
 logger = getLogger(__name__)
 
 class SquadV2DataReader(Dataset):
-    def __init__(self, split='train') -> None:
+    def __init__(self) -> None:
         self.tokenizer = AutoTokenizer.from_pretrained("google-bert/bert-large-uncased-whole-word-masking-finetuned-squad")
         self.fixed_length = self.tokenizer.model_max_length
-        self.dataset = load_dataset("rajpurkar/squad_v2", split=split)
+        self.dataset = load_dataset("rajpurkar/squad_v2", split="train")
         self.datasize = 10
 
     def preprocess(self, question, context, fixed_length=None):
@@ -62,7 +62,15 @@ class SquadV2DataReader(Dataset):
         return model_inputs, self.dataset[idx]["answers"]["text"]
 
 @Registry.register_dataloader()
-def squad_calibration_reader(dataset, batch_size,
+def squad_calibration_reader(batch_size,
                                  **kwargs) -> DataLoader:
   dataset = SquadV2DataReader()
   return DataLoader(dataset, batch_size=batch_size, shuffle=False)
+
+@Registry.register_dataset()
+def qnn_evaluation_dataset(**kwargs):
+  return SquadV2DataReader()
+
+@Registry.register_post_process()
+def qnn_post_process(output):
+  return output["start_logits"], output["end_logits"]
