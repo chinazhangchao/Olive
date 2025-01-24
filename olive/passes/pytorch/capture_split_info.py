@@ -6,11 +6,11 @@ import csv
 import logging
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Any, Dict, Optional, Union
 
 import numpy as np
 
-from olive.common.hf.mappings import MODELS_TO_EMBEDDINGS_MAPPING, MODELS_TO_LAYERS_MAPPING
+from olive.common.hf.wrapper import ModelWrapper
 from olive.common.utils import get_attr
 from olive.hardware.accelerator import AcceleratorSpec
 from olive.model import HfModelHandler, PyTorchModelHandler
@@ -35,8 +35,7 @@ class CaptureSplitInfo(Pass):
                 default_value=None,
                 description=(
                     "Name of the model block to split. Children of the block will be divided into the splits. For"
-                    " supported transformers models, the default value is the transformers layer block name. Refer to"
-                    " olive.common.hf.mappings.MODELS_TO_LAYERS_MAPPING for supported models."
+                    " supported transformers models, the default value is the transformers layer block name."
                 ),
             ),
             "cost_model": PassConfigParam(
@@ -63,17 +62,24 @@ class CaptureSplitInfo(Pass):
             ),
         }
 
-    def validate_search_point(
-        self, search_point: Dict[str, Any], accelerator_spec: AcceleratorSpec, with_fixed_value: bool = False
+    @classmethod
+    def validate_config(
+        cls,
+        config: Dict[str, Any],
+        accelerator_spec: AcceleratorSpec,
+        disable_search: Optional[bool] = False,
     ) -> bool:
-        if with_fixed_value:
-            search_point = self.config_at_search_point(search_point or {})
+        if not super().validate_config(config, accelerator_spec, disable_search):
+            return False
 
-        if search_point.get("num_splits") is None and search_point.get("cost_model") is None:
+        config_cls, _ = cls.get_config_class(accelerator_spec, disable_search)
+        config = config_cls(**config)
+
+        if config.num_splits is None and config.cost_model is None:
             logger.info("One of num_splits or cost_model is required.")
             return False
 
-        if search_point.get("cost_model") is not None and accelerator_spec.memory is None:
+        if config.cost_model is not None and accelerator_spec.memory is None:
             logger.info("Accelerator memory is required if cost_model is provided.")
             return False
 
@@ -105,21 +111,19 @@ class CaptureSplitInfo(Pass):
     def split_using_num_splits(
         self, model: Union[HfModelHandler, PyTorchModelHandler], config: Dict[str, Any]
     ) -> Dict[str, int]:
+        # consider loading with meta device to avoid loading the weights
+        loaded_model = model.load_model(cache_model=False)
+
         block_to_split = config["block_to_split"]
         # check for None specifically since "" is a valid value
         if block_to_split is None and isinstance(model, HfModelHandler):
-            model_type = model.get_hf_model_type()
-            block_to_split = MODELS_TO_LAYERS_MAPPING.get(model_type, None)
-        if block_to_split is None:
+            model_wrapper = ModelWrapper.from_model(loaded_model)
+            block, block_to_split = model_wrapper.get_layers()
+        elif block_to_split is None:
             raise ValueError("block_to_split is not set and could not be inferred. Please set it manually.")
+        else:
+            block = get_attr(loaded_model, block_to_split, fail_on_not_found=True)
 
-        # we could get the number of layers for hf model from the model attributes
-        # but will just load the model to make the logic simple for now
-        # consider loading with meta device to avoid loading the weights
-        loaded_model = model.load_model(cache_model=False)
-        block = get_attr(loaded_model, block_to_split)
-        if block is None:
-            raise ValueError(f"block_to_split {block_to_split} not found in model.")
         block_members = [child_name for child_name, _ in block.named_children()]
 
         split_assignments = {}
@@ -142,10 +146,14 @@ class CaptureSplitInfo(Pass):
             for row in reader:
                 module_to_cost[row["module"]] = (int(row["num_params"]), int(row["num_bytes"]), int(row["num_flops"]))
 
+        loaded_model = model.load_model(cache_model=False)
+
         modules_to_exclude = set()
-        if config["exclude_embeds"]:
-            model_type = model.get_hf_model_type() if isinstance(model, HfModelHandler) else None
-            modules_to_exclude.update(MODELS_TO_EMBEDDINGS_MAPPING.get(model_type, ["model.embed_tokens"]))
+        if config["exclude_embeds"] and isinstance(model, HfModelHandler):
+            model_wrapper = ModelWrapper.from_model(loaded_model)
+            modules_to_exclude.update(model_wrapper.get_embeds()[1])
+        elif config["exclude_embeds"]:
+            modules_to_exclude.add("model.embed_tokens")
         if config["exclude_lm_head"]:
             modules_to_exclude.add("lm_head")
 
@@ -154,7 +162,7 @@ class CaptureSplitInfo(Pass):
         split_bytes = 0
         node_idx = 0
         mem_intensive = False
-        for name, _ in model.load_model(cache_model=False).named_modules():
+        for name, _ in loaded_model.named_modules():
             if name not in module_to_cost or name in modules_to_exclude or name.lower().endswith("dropout"):
                 continue
 
