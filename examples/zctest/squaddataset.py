@@ -7,6 +7,7 @@ import numpy as np
 from torch.utils.data import (DataLoader, Dataset)
 from transformers import AutoTokenizer
 from olive.data.registry import Registry
+import torch
 
 logger = getLogger(__name__)
 
@@ -15,7 +16,7 @@ class SquadV2DataReader(Dataset):
         self.tokenizer = AutoTokenizer.from_pretrained("google-bert/bert-large-uncased-whole-word-masking-finetuned-squad")
         self.fixed_length = self.tokenizer.model_max_length
         self.dataset = load_dataset("rajpurkar/squad_v2", split="train")
-        self.datasize = 10
+        self.datasize = 2
 
     def preprocess(self, question, context, fixed_length=None):
         if fixed_length is not None:
@@ -59,13 +60,15 @@ class SquadV2DataReader(Dataset):
             k: np.squeeze(v, axis=0) for k, v in model_inputs.items()
         }
 
-        return model_inputs, self.dataset[idx]["answers"]["text"]
+        startIndex = self.dataset[idx]["answers"]["answer_start"][0]
+        endIndex = startIndex + len(self.dataset[idx]["answers"]["text"][0])
+
+        return model_inputs, torch.Tensor([startIndex]).to(torch.int32)
 
 @Registry.register_dataloader()
-def squad_calibration_reader(batch_size,
-                                 **kwargs) -> DataLoader:
+def squad_calibration_reader(dataset) -> DataLoader:
   dataset = SquadV2DataReader()
-  return DataLoader(dataset, batch_size=batch_size, shuffle=False)
+  return DataLoader(dataset, batch_size=1, shuffle=False)
 
 @Registry.register_dataset()
 def qnn_evaluation_dataset(**kwargs):
@@ -73,4 +76,6 @@ def qnn_evaluation_dataset(**kwargs):
 
 @Registry.register_post_process()
 def qnn_post_process(output):
-  return output["start_logits"], output["end_logits"]
+  startIndex = output["start_logits"].argmax(-1)
+  endIndex = output["end_logits"].argmax(-1)
+  return torch.Tensor([[startIndex]]).to(torch.int32)

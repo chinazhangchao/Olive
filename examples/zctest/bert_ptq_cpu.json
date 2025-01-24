@@ -29,8 +29,7 @@
             "name": "quant_data_config",
             "user_script": "squaddataset.py",
             "dataloader_config": {
-              "type": "squad_calibration_reader",
-              "batch_size": 1
+              "type": "squad_calibration_reader"
             }
         },
         {
@@ -52,8 +51,7 @@
                     "backend": "huggingface_metrics",
                     "data_config": "metric_data_config",
                     "sub_types": [
-                        { "name": "accuracy", "priority": 1, "goal": { "type": "max-degradation", "value": 0.05 } },
-                        { "name": "f1" }
+                        { "name": "accuracy", "priority": 1, "goal": { "type": "max-degradation", "value": 0.05 } }
                     ]
                 },
                 {
@@ -98,8 +96,7 @@
                 "Gelu"
             ],
             "data_config": "quant_data_config"
-        },
-        "session_params_tuning": { "type": "OrtSessionParamsTuning", "data_config": "quant_data_config" }
+        }
     },
     "evaluator": "common_evaluator",
     "host": "local_system",
