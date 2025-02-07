@@ -7,6 +7,7 @@ from torch.utils.data import Dataset
 from olive.data.registry import Registry
 from transformers import CLIPProcessor
 from PIL import Image
+import requests
 import numpy as np
 
 class MobileNetDataset(Dataset):
@@ -17,7 +18,8 @@ class MobileNetDataset(Dataset):
         return 1
 
     def __getitem__(self, idx):
-        image = Image.open(r"C:\Users\zhangchao\Pictures\image-classification-input.jpeg")
+        url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        image = Image.open(requests.get(url, stream=True).raw)
         inputs = self.processor(text=["a photo of a cat", "a photo of a dog"], images=image, return_tensors="pt", padding=True)
 
         model_inputs = {
