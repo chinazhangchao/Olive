@@ -9,6 +9,7 @@ from transformers import CLIPProcessor
 from PIL import Image
 import requests
 import numpy as np
+import torch
 
 class MobileNetDataset(Dataset):
     def __init__(self):
@@ -28,7 +29,7 @@ class MobileNetDataset(Dataset):
             'attention_mask': inputs['attention_mask'],
         }
 
-        return model_inputs, "a photo of a cat"
+        return model_inputs, torch.Tensor([0]).to(torch.int32)
 
 @Registry.register_dataset()
 def mobilenet_dataset(**kwargs):
@@ -36,4 +37,4 @@ def mobilenet_dataset(**kwargs):
 
 @Registry.register_post_process()
 def mobilenet_post_process(output):
-    return output.argmax(axis=1)
+    return torch.Tensor([[output.logits_per_image.argmax()]]).to(torch.int32)
