@@ -87,10 +87,12 @@ def quantize_model():
 
     # quant_config.op_types_to_quantize = ['MatMul', 'Gemm', 'LayerNormalization', 'Sigmoid', 'Gelu']  # ok
 
+    print("Quantizing model")
     quantize(
         model_input=quant_pre_model_path,
         model_output="./clip-vit-base-patch32_quantized.onnx",
         quant_config=quant_config,
     )
+    print("Model quantized")
 
 quantize_model()
