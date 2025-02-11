@@ -1,0 +1,37 @@
+INPUTS
+
+name: input_ids
+tensor: int64[text_batch_size,sequence_length]
+pixel_values
+name: pixel_values
+tensor: float32[image_batch_size,num_channels,height,width]
+attention_mask
+name: attention_mask
+tensor: int64[text_batch_size,sequence_length]
+
+OUTPUTS
+
+logits_per_image
+name: logits_per_image
+tensor: float32[image_batch_size,text_batch_size]
+logits_per_text
+name: logits_per_text
+tensor: float32[text_batch_size,image_batch_size]
+text_embeds
+name: text_embeds
+tensor: float32[text_batch_size,512]
+image_embeds
+name: image_embeds
+tensor: float32[image_batch_size,512]
+onnx::Shape_3916
+name: onnx::Shape_3916
+tensor: float32[LayerNormalizationonnx::Shape_3916_dim_0,LayerNormalizationonnx::Shape_3916_dim_1,512]
+onnx::MatMul_3940
+name: onnx::MatMul_3940
+tensor: float32[text_batch_size,512]
+onnx::Gather_1868
+name: onnx::Gather_1868
+tensor: float32[image_batch_size,Addonnx::Gather_1868_dim_1,Addonnx::Gather_1868_dim_2]
+onnx::MatMul_1870
+name: onnx::MatMul_1870
+tensor: float32[image_batch_size,Addonnx::Gather_1868_dim_2]
