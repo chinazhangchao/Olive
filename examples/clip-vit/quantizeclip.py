@@ -9,6 +9,7 @@ from onnxruntime.quantization import CalibrationDataReader, QuantFormat, QuantTy
 from onnxruntime.quantization.shape_inference import quant_pre_process
 from onnxruntime.quantization.execution_providers.qnn import get_qnn_qdq_config, qnn_preprocess_model
 from datasets import load_dataset
+from scipy.special import softmax
 
 model_name = "openai/clip-vit-base-patch32"
 
@@ -103,7 +104,8 @@ def quantize_model():
 def test_model():
     url = "http://images.cocodataset.org/val2017/000000039769.jpg"
     image = Image.open(requests.get(url, stream=True).raw)
-    inputs = CLIPProcessor.from_pretrained(model_name).processor(text=["a photo of a cat", "a photo of a dog"], images=image, return_tensors="np", padding=True)
+    processor = CLIPProcessor.from_pretrained(model_name)
+    inputs = processor(text=["a photo of a cat", "a photo of a dog"], images=image, return_tensors="np", padding=True)
 
     model_inputs = {
         'input_ids':   inputs['input_ids'].astype(np.int64),
@@ -116,12 +118,13 @@ def test_model():
     options.add_session_config_entry("session.disable_cpu_ep_fallback", "1")
 
     session = onnxruntime.InferenceSession("./clip-vit-base-patch32_quantized.onnx",
-                                        sess_options=options,
+                                        # sess_options=options,
                                         providers=["QNNExecutionProvider"],
                                         provider_options=[{"backend_path": "QnnHtp.dll"}])
 
-    outputs = session.run(['start_logits', 'end_logits'], model_inputs)
-    print(outputs)
+    outputs = session.run(["logits_per_image", "logits_per_text", "text_embeds"], model_inputs)
+    probs = softmax(outputs[0], axis=1)
+    print(probs)
 
 # quantize_model()
 test_model()

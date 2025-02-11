@@ -21,12 +21,12 @@ class MobileNetDataset(Dataset):
     def __getitem__(self, idx):
         url = "http://images.cocodataset.org/val2017/000000039769.jpg"
         image = Image.open(requests.get(url, stream=True).raw)
-        inputs = self.processor(text=["a photo of a cat", "a photo of a dog"], images=image, return_tensors="pt", padding=True)
+        inputs = self.processor(text=["a photo of a cat", "a photo of a dog"], images=image, return_tensors="np", padding=True)
 
         model_inputs = {
-            'input_ids':   inputs['input_ids'],
+            'input_ids':   inputs['input_ids'].astype(np.int64),
             'pixel_values':  inputs['pixel_values'],
-            'attention_mask': inputs['attention_mask'],
+            'attention_mask': inputs['attention_mask'].astype(np.int64),
         }
 
         return model_inputs, torch.Tensor([0]).to(torch.int32)
@@ -37,4 +37,4 @@ def mobilenet_dataset(**kwargs):
 
 @Registry.register_post_process()
 def mobilenet_post_process(output):
-    return torch.Tensor([[output.logits_per_image.argmax()]]).to(torch.int32)
+    return torch.Tensor([[output[0].argmax()]]).to(torch.int32)
