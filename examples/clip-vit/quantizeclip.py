@@ -13,10 +13,11 @@ from datasets import load_dataset
 model_name = "openai/clip-vit-base-patch32"
 
 class ClipDataReader(CalibrationDataReader):
-    def __init__(self) -> None:
+    def __init__(self, tensor_type='np') -> None:
         self.processor = CLIPProcessor.from_pretrained(model_name)
         self.currentIndex = 0
         self.datasize = 1
+        self.tensor_type = tensor_type
 
     def get_next(self):
         if self.currentIndex >= self.datasize:
@@ -24,13 +25,17 @@ class ClipDataReader(CalibrationDataReader):
 
         url = "http://images.cocodataset.org/val2017/000000039769.jpg"
         image = Image.open(requests.get(url, stream=True).raw)
-        inputs = self.processor(text=["a photo of a cat", "a photo of a dog"], images=image, return_tensors="pt", padding=True)
+        inputs = self.processor(text=["a photo of a cat", "a photo of a dog"], images=image, return_tensors=self.tensor_type, padding=True)
 
         model_inputs = {
             'input_ids':   inputs['input_ids'],
             'pixel_values':  inputs['pixel_values'],
             'attention_mask': inputs['attention_mask'],
         }
+
+        if self.tensor_type == 'np':
+            model_inputs['input_ids'] = model_inputs['input_ids'].astype(np.int64)
+            model_inputs['attention_mask'] = model_inputs['attention_mask'].astype(np.int64)
 
         self.currentIndex += 1
 
@@ -43,7 +48,7 @@ def quantize_model():
     pt_model = CLIPModel.from_pretrained(model_name)
     pt_model.eval()
 
-    sample_inputs = ClipDataReader().get_next()
+    sample_inputs = ClipDataReader("pt").get_next()
     # pt_inputs = {k: torch.tensor(v) for k, v in sample_inputs.items()}
 
     input_model_path = "./clip-vit-base-patch32.onnx"
@@ -95,4 +100,28 @@ def quantize_model():
     )
     print("Model quantized")
 
-quantize_model()
+def test_model():
+    url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+    image = Image.open(requests.get(url, stream=True).raw)
+    inputs = CLIPProcessor.from_pretrained(model_name).processor(text=["a photo of a cat", "a photo of a dog"], images=image, return_tensors="np", padding=True)
+
+    model_inputs = {
+        'input_ids':   inputs['input_ids'].astype(np.int64),
+        'pixel_values':  inputs['pixel_values'],
+        'attention_mask': inputs['attention_mask'].astype(np.int64),
+
+    }
+
+    options = onnxruntime.SessionOptions()
+    options.add_session_config_entry("session.disable_cpu_ep_fallback", "1")
+
+    session = onnxruntime.InferenceSession("./clip-vit-base-patch32_quantized.onnx",
+                                        sess_options=options,
+                                        providers=["QNNExecutionProvider"],
+                                        provider_options=[{"backend_path": "QnnHtp.dll"}])
+
+    outputs = session.run(['start_logits', 'end_logits'], model_inputs)
+    print(outputs)
+
+# quantize_model()
+test_model()
