@@ -91,7 +91,7 @@ def quantize_model():
         weight_type=QuantType.QUInt8
     )
 
-    # quant_config.op_types_to_quantize = ['MatMul', 'Gemm', 'LayerNormalization', 'Sigmoid', 'Gelu']  # ok
+    quant_config.op_types_to_quantize = ['MatMul', 'Gemm', 'LayerNormalization', 'Sigmoid', 'Gelu']  # ok
 
     print("Quantizing model")
     quantize(
@@ -126,5 +126,5 @@ def test_model():
     probs = softmax(outputs[0], axis=1)
     print(probs)
 
-# quantize_model()
+quantize_model()
 test_model()
