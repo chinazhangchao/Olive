@@ -11,7 +11,7 @@ import requests
 import numpy as np
 import torch
 
-class MobileNetDataset(Dataset):
+class QuantizationDataset(Dataset):
     def __init__(self):
         self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
@@ -31,10 +31,17 @@ class MobileNetDataset(Dataset):
 
         return model_inputs, torch.Tensor([0]).to(torch.int32)
 
+class EvaluationDataset(Dataset):
+    pass
+
 @Registry.register_dataset()
-def mobilenet_dataset(**kwargs):
-    return MobileNetDataset()
+def quantization_dataset(**kwargs):
+    return QuantizationDataset()
+
+@Registry.register_dataset()
+def qnn_evaluation_dataset(**kwargs):
+  return EvaluationDataset()
 
 @Registry.register_post_process()
-def mobilenet_post_process(output):
+def qnn_post_process(output):
     return torch.Tensor([[output[0].argmax()]]).to(torch.int32)

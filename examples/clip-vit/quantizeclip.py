@@ -124,7 +124,7 @@ def test_model():
                                         providers=["QNNExecutionProvider"],
                                         provider_options=[{"backend_path": "QnnHtp.dll"}])
 
-    outputs = session.run(["logits_per_image", "logits_per_text"], model_inputs)
+    outputs = session.run(["logits_per_image"], model_inputs)
     probs = softmax(outputs[0], axis=1)
     print(probs)
 
