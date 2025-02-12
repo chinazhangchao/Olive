@@ -44,6 +44,13 @@
             "save_as_external_data": true,
             "all_tensors_to_one_file": true,
             "data_config": "quant_data_config",
+            "op_types_to_quantize": [
+                "MatMul",
+                "LayerNormalization",
+                "Gemm",
+                "Sigmoid",
+                "Gelu"
+            ],
             "activation_type": "QUInt16",
             "weight_type": "QUInt8",
             "calibrate_method": "MinMax"
