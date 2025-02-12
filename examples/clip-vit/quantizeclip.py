@@ -119,7 +119,7 @@ def test_model():
 
     session = onnxruntime.InferenceSession(
         # "./clip-vit-base-patch32_quantized.onnx",
-                                           r"examples\clip-vit\models\clip-vit-base-patch32\model\model.onnx",
+                                           r"examples\clip-vit\models\clip-vit-base-patch32\model.onnx",
                                         # sess_options=options,
                                         providers=["QNNExecutionProvider"],
                                         provider_options=[{"backend_path": "QnnHtp.dll"}])
@@ -128,5 +128,5 @@ def test_model():
     probs = softmax(outputs[0], axis=1)
     print(probs)
 
-quantize_model()
+# quantize_model()
 test_model()

@@ -34,15 +34,11 @@
     "passes": {
         "conversion": { "type": "OnnxConversion", "target_opset": 17 },
         "qnn_preprocess": {
-            "type": "QNNPreprocess",
-            "save_as_external_data": true,
-            "all_tensors_to_one_file": true
+            "type": "QNNPreprocess"
         },
         "quantization": {
             "type": "OnnxStaticQuantization",
             "quant_preprocess": true,
-            "save_as_external_data": true,
-            "all_tensors_to_one_file": true,
             "data_config": "quant_data_config",
             "op_types_to_quantize": [
                 "MatMul",
