@@ -117,12 +117,14 @@ def test_model():
     options = onnxruntime.SessionOptions()
     options.add_session_config_entry("session.disable_cpu_ep_fallback", "1")
 
-    session = onnxruntime.InferenceSession("./clip-vit-base-patch32_quantized.onnx",
+    session = onnxruntime.InferenceSession(
+        # "./clip-vit-base-patch32_quantized.onnx",
+                                           r"examples\clip-vit\models\clip-vit-base-patch32\model\model.onnx",
                                         # sess_options=options,
                                         providers=["QNNExecutionProvider"],
                                         provider_options=[{"backend_path": "QnnHtp.dll"}])
 
-    outputs = session.run(["logits_per_image", "logits_per_text", "text_embeds"], model_inputs)
+    outputs = session.run(["logits_per_image", "logits_per_text"], model_inputs)
     probs = softmax(outputs[0], axis=1)
     print(probs)
 
