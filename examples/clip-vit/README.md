@@ -30,7 +30,8 @@ pip install git+https://github.com/microsoft/Olive#egg=olive-ai[gpu]
 pip install git+https://github.com/microsoft/Olive#egg=olive-ai[qnn]
 ```
 
-# Other dependencies
+### Other dependencies
+```sh
 python -m pip install -r requirements.txt
 ```
 
