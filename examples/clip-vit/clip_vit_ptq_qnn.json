@@ -19,7 +19,7 @@
     "systems": {
         "local_system": {
             "type": "LocalSystem",
-            "accelerators": [ { "device": "cpu", "execution_providers": [ "CPUExecutionProvider" ] } ]
+            "accelerators": [ { "device": "npu", "execution_providers": [ "NPUExecutionProvider" ] } ]
         }
     },
     "data_configs": [
