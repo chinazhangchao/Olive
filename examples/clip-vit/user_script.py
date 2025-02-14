@@ -17,10 +17,12 @@ class CLIPDataset(Dataset):
     # TODO: np and pt 2 formats? first disable pre-eval?
     def __init__(self, start=0, end=100, image_size=(224, 224)):
         assert 0 <= start < end
+        self.start = start
+        self.end = end
         self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")  # max_length = 77 for input_ids
-        self.length = end - start
+        self.length = self.end - self.start
         self.image_size = image_size
-        dataset = load_dataset("nlphuji/flickr30k", split=f"test[:{self.length}]")
+        dataset = load_dataset("nlphuji/flickr30k", split=f"test[{self.start}:{self.end}]")
         text_inputs = self.processor(text=[' '.join(item['caption']) for item in dataset], return_tensors="np", padding="max_length", truncation=True)
         image_inputs = [self.processor(images=item['image'].resize(self.image_size), return_tensors="np") for item in dataset]
         self.model_inputs = [
@@ -42,7 +44,5 @@ def clip_dataset(**kwargs):
     return CLIPDataset(**kwargs)
 
 @Registry.register_post_process()
-def qnn_post_process(output):
-    # TODO: handle pytorch and numpy cases in this function
-    # return torch.Tensor([[output[0].argmax()]]).to(torch.int32)
+def clip_post_process(output):
     return output['logits_per_image'].argmax(axis=-1)
