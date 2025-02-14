@@ -15,14 +15,23 @@ from datasets import load_dataset
 
 class CLIPDataset(Dataset):
     # TODO: np and pt 2 formats? first disable pre-eval?
-    def __init__(self, start=0, end=100, image_size=(224, 224)):
+    def __init__(
+        self,
+        model_name="openai/clip-vit-base-patch32",
+        dataset_name="nlphuji/flickr30k",
+        start=0,
+        end=100,
+        image_size=(224, 224)
+    ):
         assert 0 <= start < end
         self.start = start
         self.end = end
-        self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")  # max_length = 77 for input_ids
+        self.model_name = model_name
+        self.dataset_name = dataset_name
+        self.processor = CLIPProcessor.from_pretrained(self.model_name)  # max_length = 77 for input_ids
         self.length = self.end - self.start
         self.image_size = image_size
-        dataset = load_dataset("nlphuji/flickr30k", split=f"test[{self.start}:{self.end}]")
+        dataset = load_dataset(self.dataset_name, split=f"test[{self.start}:{self.end}]")
         text_inputs = self.processor(text=[' '.join(item['caption']) for item in dataset], return_tensors="np", padding="max_length", truncation=True)
         image_inputs = [self.processor(images=item['image'].resize(self.image_size), return_tensors="np") for item in dataset]
         self.model_inputs = [
