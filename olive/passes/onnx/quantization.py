@@ -488,8 +488,14 @@ class OnnxQuantization(Pass):
                 )
                 # override the run_config with qnn_config
                 # get all attributes of qnn_config
-                run_config = {k: v for k, v in inspect.getmembers(qnn_config) if not k.startswith("_")}
+                # run_config = {k: v for k, v in inspect.getmembers(qnn_config) if not k.startswith("_")}
                 # remove the calibration_data_reader from run_config
+                op_types_to_quantize = run_config["op_types_to_quantize"]
+
+                run_config = {k: v for k, v in inspect.getmembers(qnn_config) if not k.startswith("_")}
+
+                if op_types_to_quantize:
+                    run_config["op_types_to_quantize"] = op_types_to_quantize
 
             run_config = exclude_keys(
                 run_config,
