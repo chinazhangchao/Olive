@@ -10,14 +10,14 @@
                 "token_type_ids"
             ],
             "input_shapes": [
-                [1, 77],
-                [1, 77],
-                [1, 77]
+                [1, 128],
+                [1, 128],
+                [1, 128]
             ],
             "input_types": ["int64", "int64", "int64"],
             "output_names": ["logits"],
             "output_shapes": [
-                [1, 77, 119547]
+                [1, 128, 119547]
             ],
             "output_types": ["float32"]
         }
