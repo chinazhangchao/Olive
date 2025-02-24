@@ -2,6 +2,7 @@
     "input_model": {
         "type": "HfModel",
         "model_path": "google-bert/bert-base-multilingual-cased",
+        "task": "text-classification",
         "load_kwargs": { "attn_implementation": "eager" },
         "io_config": {
             "input_names": [
