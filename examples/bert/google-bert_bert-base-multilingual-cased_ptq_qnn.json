@@ -37,7 +37,7 @@
                 "type": "quantization_dataset",
                 "model_name": "google-bert/bert-base-multilingual-cased",
                 "start": 0,
-                "end": 10
+                "end": 100
             },
             "dataloader_config": { "type": "no_auto_batch_dataloader" }
         },
@@ -47,8 +47,8 @@
             "load_dataset_config": {
                 "type": "mlm_dataset",
                 "model_name": "google-bert/bert-base-multilingual-cased",
-                "start": 10,
-                "end": 20
+                "start": 100,
+                "end": 200
             },
             "dataloader_config": { "type": "no_auto_batch_dataloader" }
         }

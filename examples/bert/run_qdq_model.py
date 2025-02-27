@@ -21,17 +21,17 @@ encoded_input = tokenizer(
                     padding="max_length",
                     max_length= 128,
                     truncation=True,
-                    return_tensors='pt')
+                    return_tensors='np')
 
 result = session.run(["logits"],
                      {
-                        "input_ids": np.array(encoded_input['input_ids']).astype(np.int64),
-                        "attention_mask": np.array(encoded_input['attention_mask']).astype(np.int64),
-                        "token_type_ids": np.array(encoded_input['token_type_ids']).astype(np.int64)
+                        "input_ids": encoded_input['input_ids'].astype(np.int64),
+                        "attention_mask": encoded_input['attention_mask'].astype(np.int64),
+                        "token_type_ids": encoded_input['token_type_ids'].astype(np.int64)
                     })
 
 outputs = result[0]
-masked_index = torch.nonzero(encoded_input['input_ids'].squeeze() == tokenizer.mask_token_id, as_tuple=False).squeeze(-1)
+masked_index = torch.nonzero(torch.from_numpy(encoded_input['input_ids']).squeeze() == tokenizer.mask_token_id, as_tuple=False).squeeze(-1)
 
 logits = outputs[0, masked_index, :]
 probs = torch.from_numpy(logits).softmax(dim=-1)
