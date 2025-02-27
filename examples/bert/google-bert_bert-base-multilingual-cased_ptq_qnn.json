@@ -39,7 +39,7 @@
                 "start": 0,
                 "end": 10
             },
-            "dataloader_config": { "batch_size": 1 }
+            "dataloader_config": { "type": "no_auto_batch_dataloader" }
         },
         {
             "name": "mlm_data_config",
@@ -50,7 +50,7 @@
                 "start": 10,
                 "end": 20
             },
-            "dataloader_config": { "batch_size": 1 }
+            "dataloader_config": { "type": "no_auto_batch_dataloader" }
         }
     ],
     "evaluators": {
