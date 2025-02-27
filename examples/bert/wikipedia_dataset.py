@@ -1,4 +1,7 @@
 from datasets import load_dataset
-d=load_dataset("wikipedia", "20220301.en", streaming=True, trust_remote_code=True)
-item = next(iter(d['train']))
-item['text']
+iterable_dataset = load_dataset("wikimedia/wikipedia", "20231101.en", split="train", streaming=True)
+iterable_dataset=iterable_dataset.skip(2)
+it = iter(iterable_dataset)
+for i in range(0, 3):
+    item = next(it)
+    print(item)
