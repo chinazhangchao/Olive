@@ -63,7 +63,10 @@
                     "sub_types": [ { "name": "perplexity_score", "priority": 1, "higher_is_better": false } ],
                     "user_config": {
                         "user_script": "mlm_user_script.py",
-                        "metric_func": "calc_perplexity"
+                        "metric_func": "calc_perplexity",
+                        "metric_func_kwargs": {
+                            "model_name": "google-bert/bert-base-multilingual-cased"
+                        }
                     }
                 },
                 {
