@@ -70,21 +70,30 @@ class MLMDataset(QuantizationDataset):
 def mlm_dataset(**kwargs):
     return MLMDataset(**kwargs)
 
-def calc_perplexity(model_output, targets, model_name):
-    # model_output[0]: preds, model_output[1]: logits
-    # calculate metric
-    # return metric value
-    # model_outputs["input_ids"]
-
-    probs = model_output.logits[torch.arange(model_output.logits.size(dim=0)), targets, :].softmax(dim=-1)
-    _, predictions = probs.topk(5)
+def eval_perplexity(model, device, execution_providers, model_name, start=0, end=100):
     tokenizer = BertTokenizer.from_pretrained(model_name)
-    for p in predictions:
-        tokenizer.decode([p])
 
-    perplexity = evaluate.load("perplexity", module_type="measurement")
-    input_texts = ["Hello I'm a model model.", "Hello I'm a world model.", "Hello I'm a data model.", "Hello I'm a flight model.", "Hello I'm a business model." ]
-    results = perplexity.compute(model_id='gpt2',
-                                add_start_token=False,
-                                data=input_texts)
-    results["mean_perplexity"]
+    iterable_dataset = load_dataset("wikimedia/wikipedia", "20231101.en", split="train", streaming=True)
+    iterable_dataset=iterable_dataset.skip(start)
+    it = iter(iterable_dataset)
+
+    item = next(self.it)
+    encoded_input = self.tokenizer(
+                item["text"],
+                padding="max_length",
+                max_length= 128,
+                truncation=True,
+                return_tensors='np')
+
+    # probs = model_output.logits[torch.arange(model_output.logits.size(dim=0)), targets, :].softmax(dim=-1)
+    # _, predictions = probs.topk(5)
+    # tokenizer = BertTokenizer.from_pretrained(model_name)
+    # for p in predictions:
+    #     tokenizer.decode([p])
+
+    # perplexity = evaluate.load("perplexity", module_type="measurement")
+    # input_texts = ["Hello I'm a model model.", "Hello I'm a world model.", "Hello I'm a data model.", "Hello I'm a flight model.", "Hello I'm a business model." ]
+    # results = perplexity.compute(model_id='gpt2',
+    #                             add_start_token=False,
+    #                             data=input_texts)
+    # results["mean_perplexity"]
