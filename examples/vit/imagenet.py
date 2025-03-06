@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 # --------------------------------------------------------------------------
-from logging import getLogger
 from pathlib import Path
 
 import numpy as np
@@ -11,8 +10,6 @@ from torch import from_numpy
 from torch.utils.data import Dataset
 
 from olive.data.registry import Registry
-
-logger = getLogger(__name__)
 
 
 class ImagenetDataset(Dataset):
@@ -28,7 +25,7 @@ class ImagenetDataset(Dataset):
 
 
 @Registry.register_post_process()
-def imagenet_post_fun(output):
+def dataset_post_process(output):
     return output.argmax(axis=1)
 
 
@@ -45,30 +42,25 @@ preprocess = transforms.Compose(
 @Registry.register_pre_process()
 def dataset_pre_process(output_data, **kwargs):
     cache_key = kwargs.get("cache_key")
-    size = kwargs.get("size", 256)
     cache_file = None
     if cache_key:
-        cache_file = Path(f"./cache/data/{cache_key}_{size}.npz")
+        cache_file = Path(f"./cache/data/{cache_key}.npz")
         if cache_file.exists():
             with np.load(Path(cache_file)) as data:
                 return ImagenetDataset(data)
 
-    labels = []
-    images = []
+    size = kwargs.get("size", 256)
+    labels, images = [], []
     for i, sample in enumerate(output_data):
         if i >= size:
             break
-        image = sample["image"]
+        image = sample["image"].convert("RGB")
         label = sample["label"]
-        image = image.convert("RGB")
-        image = preprocess(image)
-        images.append(image)
+
+        images.append(preprocess(image))
         labels.append(label)
 
-    result_data = ImagenetDataset({"images": np.array(images), "labels": np.array(labels)})
+    cache_file.parent.resolve().mkdir(parents=True, exist_ok=True)
+    np.savez(cache_file, images=np.array(images), labels=np.array(labels))
 
-    if cache_file:
-        cache_file.parent.resolve().mkdir(parents=True, exist_ok=True)
-        np.savez(cache_file, images=np.array(images), labels=np.array(labels))
-
-    return result_data
+    return ImagenetDataset({"images": np.array(images), "labels": np.array(labels)})
